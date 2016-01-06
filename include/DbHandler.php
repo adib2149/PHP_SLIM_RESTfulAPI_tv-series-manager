@@ -158,5 +158,47 @@ class DbHandler {
         $stmt->close();
         return $tv_series_list;
     }
+    
+    /*
+     *  get collection of a single user
+     */
+    public function getCollection($user_id) {
+        $stmt = $this->conn->prepare("SELECT tv_series.id_tv_series, tv_series.tv_series_name, tv_series.count_like, tv_series.count_rating, tv_series.default_image, collection.id_user_regular
+                FROM tv_series
+                LEFT JOIN collection on collection.id_tv_series = tv_series.id_tv_series 
+                WHERE collection.id_user_regular = ?;");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $tv_series_list = $stmt->get_result();
+        $stmt->close();
+        return $tv_series_list;
+    }
+    
+    /*
+     *  add TV_SERIES to collection
+     */
+    public function addTvSeriesToCollection($id_tv_series, $id_user) {
+        $stmt = $this->conn->prepare("INSERT INTO collection (`id_user_regular`, `id_tv_series`)
+            VALUES (?, ?);");
+        $stmt->bind_param("ii", $id_user, $id_tv_series);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+    
+    /**
+     * get single tv_series
+     */
+    public function getSingleTvSeries($id_tv_series) {
+        $stmt = $this->conn->prepare("SELECT id_tv_series, tv_series_name, imdb_link, count_like, count_rating, default_image FROM tv_series "
+                . "WHERE id_tv_series = ?;");
+        $stmt->bind_param("i", $id_tv_series);
+        if ($stmt->execute()) {
+            $tv_series = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $tv_series;
+        } else {
+            return NULL;
+        }
+    }
 }
-

@@ -201,12 +201,86 @@ $app->get('/allseries/', 'authenticate', function() {
         $tmp["name"] = $tv_series["tv_series_name"];
         $tmp["likes"] = $tv_series["count_like"];
         $tmp["rating"] = $tv_series["count_rating"];
-        $tmp["iamge"] = $tv_series["default_image"];
+        $tmp["image"] = $tv_series["default_image"];
         $tmp["is_in_collection"] = $tv_series["status"];
         array_push($response["tv_series_list"], $tmp);
     }
     
     echoRespnse(200, $response);
 });
+
+/*
+ * collection of a single user
+ */
+$app->get('/collection/', 'authenticate', function() {
+    global $user_id;
+    $response = [];
+    $db = new DbHandler();
+    
+    $result = $db->getCollection($user_id);
+    
+    $response["error"] = FALSE;
+    $response["tv_series_list"] = [];
+    
+    while ($tv_series = $result->fetch_assoc()) {
+        $tmp = [];
+        $tmp["id_tv_series"] = $tv_series["id_tv_series"];
+        $tmp["name"] = $tv_series["tv_series_name"];
+        $tmp["likes"] = $tv_series["count_like"];
+        $tmp["rating"] = $tv_series["count_rating"];
+        $tmp["image"] = $tv_series["default_image"];
+        array_push($response["tv_series_list"], $tmp);
+    }
+    
+    echoRespnse(200, $response);
+});
+
+/*
+ * adding tv_series to collection
+ */
+$app->post('/collection/', 'authenticate', function() use ($app) {
+    
+    verifyRequiredParams(array('id_tv_series'));
+    
+    $id_tv_series = $app->request()->post('id_tv_series');
+    
+    global $user_id;
+    $response = [];
+    $db = new DbHandler();
+    
+    if ($db->addTvSeriesToCollection($id_tv_series ,$user_id)) {
+        $response['error'] = FALSE;
+    } else {
+        $response['error'] = TRUE;
+    }
+    
+    echoRespnse(200, $response);
+});
+
+/*
+ * get single tv_series
+ */
+$app->get('/collection/:id', 'authenticate', function($id_tv_series) {
+            global $user_id;
+            $response = [];
+            $db = new DbHandler();
+ 
+            // fetch task
+            $result = $db->getSingleTvSeries($id_tv_series);
+ 
+            if ($result != NULL) {
+                $response["error"] = false;
+                $response["id"] = $result["id_tv_series"];
+                $response["name"] = $result["tv_series_name"];
+                $response["imdb_link"] = $result["imdb_link"];
+                $response["likes"] = $result["count_like"];
+                $response["rating"] = $result["count_rating"];
+                $response["image"] = $result["default_image"];
+                echoRespnse(200, $response);
+            } else {
+                $response["error"] = true;
+                echoRespnse(404, $response);
+            }
+        });
 
 $app->run();
