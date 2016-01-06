@@ -99,7 +99,7 @@ function authenticate(\Slim\Route $route) {
             // get user primary key id
             $user = $db->getUserId($api_key);
             if ($user != NULL) {
-                $user_id = $user["id"];
+                $user_id = $user["id_user_regular"];
             }
         }
     } else {
@@ -188,8 +188,25 @@ $app->post('/login', function() use ($app) {
 $app->get('/allseries/', 'authenticate', function() {
     global $user_id;
     $response = [];
+    $db = new DbHandler();
     
+    $result = $db->getAllTvSeries($user_id);
     
+    $response["error"] = FALSE;
+    $response["tv_series_list"] = [];
+    
+    while ($tv_series = $result->fetch_assoc()) {
+        $tmp = [];
+        $tmp["id_tv_series"] = $tv_series["id_tv_series"];
+        $tmp["name"] = $tv_series["tv_series_name"];
+        $tmp["likes"] = $tv_series["count_like"];
+        $tmp["rating"] = $tv_series["count_rating"];
+        $tmp["iamge"] = $tv_series["default_image"];
+        $tmp["is_in_collection"] = $tv_series["status"];
+        array_push($response["tv_series_list"], $tmp);
+    }
+    
+    echoRespnse(200, $response);
 });
 
 $app->run();
