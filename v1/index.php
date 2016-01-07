@@ -111,12 +111,7 @@ function authenticate(\Slim\Route $route) {
     }
 }
 
-/**
- * User Registration
- * url - /register
- * method - POST
- * params - name, email, password
- */
+/* User Registration */
 $app->post('/register', function() use ($app) {
             // check for required params
             verifyRequiredParams(array('name', 'email', 'password'));
@@ -149,9 +144,7 @@ $app->post('/register', function() use ($app) {
             }
         });
         
-/*
- * User Login
- */        
+/* User Login */        
 $app->post('/login', function() use ($app) {
     verifyRequiredParams(array('email', 'password'));
     
@@ -182,9 +175,7 @@ $app->post('/login', function() use ($app) {
     echoRespnse(200, $response);
 });
 
-/*
- * all tv series
- */
+/* all tv series */
 $app->get('/allseries/', 'authenticate', function() {
     global $user_id;
     $response = [];
@@ -209,9 +200,7 @@ $app->get('/allseries/', 'authenticate', function() {
     echoRespnse(200, $response);
 });
 
-/*
- * collection of a single user
- */
+/* collection of a single user */
 $app->get('/collection/', 'authenticate', function() {
     global $user_id;
     $response = [];
@@ -235,9 +224,7 @@ $app->get('/collection/', 'authenticate', function() {
     echoRespnse(200, $response);
 });
 
-/*
- * adding tv_series to collection
- */
+/* adding tv_series to collection */
 $app->post('/collection/', 'authenticate', function() use ($app) {
     
     verifyRequiredParams(array('id_tv_series'));
@@ -257,9 +244,7 @@ $app->post('/collection/', 'authenticate', function() use ($app) {
     echoRespnse(200, $response);
 });
 
-/*
- * get single tv_series
- */
+/* get single tv_series */
 $app->get('/collection/:id', 'authenticate', function($id_tv_series) {
             global $user_id;
             $response = [];
@@ -282,5 +267,88 @@ $app->get('/collection/:id', 'authenticate', function($id_tv_series) {
                 echoRespnse(404, $response);
             }
         });
+        
+/* add/remove like to photos */
+$app->post('/collection/photos/:id/like', 'authenticate', function($id_photo) use ($app) {
+    verifyRequiredParams(array('like_value'));
+    
+    $like_value = $app->request()->post('like_value');
+    
+    global $user_id;
+    $response = [];
+    $db = new DbHandler();
+    $like_id = $db->isLikeAvailable($id_photo ,$user_id);
+    
+    if ($like_id) {
+       
+        if ($like_value == 0) {
+            if ($db->removeLike($like_id["id_like"])) {
+                $db->decrementLike($id_photo);
+                $response['error'] = FALSE;
+                $response['message'] = "successfully disliked";
+            } else {
+                $response['error'] = TRUE;
+                $response['message'] = "Unsuccessful like removal";
+            }
+        } else {
+            $response['error'] = TRUE;
+            $response['message'] = "Already liked or bad value";
+        }       
+    } else {
+        if ($like_value == 1) {
+            if ($db->addLike($id_photo, $user_id)) {
+                $db->incrementLike($id_photo);
+                $response['error'] = FALSE;
+                $response['message'] = "successfully Liked";
+            } else {
+                $response['error'] = TRUE;
+                $response['message'] = "Unsuccessful like addition";
+            }
+        
+        } else {
+            $response['error'] = TRUE;
+            $response['message'] = "No previous value to dislike or bad value";
+        }
+    }
+    
+    echoRespnse(200, $response);
+});
+
+/* add/update rating to tv_series */
+$app->post('/collection/:id/rating', 'authenticate', function($id_tv_series) use ($app) {
+    verifyRequiredParams(array('rating_value'));
+    
+    $rating_value = $app->request()->post('rating_value');
+    
+    global $user_id;
+    $response = [];
+    $db = new DbHandler();
+    $rating_id = $db->isRatingAvailable($id_tv_series ,$user_id);
+    
+    if ($rating_value <= 5 && $rating_value >= 0) {
+    if ($rating_id) {
+        if ($db->updateRating($rating_id["id_rating"], $rating_value)) {
+            $response['error'] = FALSE;
+            $response['message'] = "successfully updated rating";
+        } else {
+            $response['error'] = TRUE;
+            $response['message'] = "Updating rating unsuccessful";
+        }
+    } else {
+        if ($db->addRating($id_tv_series, $user_id, $rating_value)) {
+            $response['error'] = FALSE;
+            $response['message'] = "successfully added rating";
+        } else {
+            $response['error'] = TRUE;
+            $response['message'] = "Adding rating unsuccessful";
+        }
+    }
+    } else {
+        $response['error'] = TRUE;
+        $response['message'] = "Weird value input";
+    }
+    
+    echoRespnse(200, $response);
+});
 
 $app->run();

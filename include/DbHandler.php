@@ -201,4 +201,109 @@ class DbHandler {
             return NULL;
         }
     }
+    
+    /* is like available */
+    public function isLikeAvailable($id_photo, $id_user) {
+        $stmt = $this->conn->prepare("SELECT id_like FROM like_photo WHERE id_photo = ? AND id_user_regular = ?;");
+        $stmt->bind_param("ii", $id_photo, $id_user);
+        if ($stmt->execute()) {
+            $like_id = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $like_id;
+        } else {
+            return NULL;
+        }
+    }
+
+    /* add like */
+    public function addLike($id_photo, $id_user) {
+        $stmt = $this->conn->prepare("INSERT INTO like_photo
+                    (`id_photo`, `id_user_regular`)
+                    VALUES (?, ?);");
+        $stmt->bind_param("ii", $id_photo, $id_user);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+    
+    /* remove like */
+    public function removeLike($id_like) {
+        $stmt = $this->conn->prepare("DELETE FROM like_photo
+                WHERE id_like = ?;");
+        $stmt->bind_param("i", $id_like);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+    
+    /* increase like by 1 */
+    public function incrementLike($id_photo) {
+        $stmt = $this->conn->prepare("UPDATE photo 
+                SET count_like = count_like + 1
+                WHERE id_photo = ?;");
+        $stmt->bind_param("i", $id_photo);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+
+    /* decrese like by 1 */
+    public function decrementLike($id_photo) {
+        $stmt = $this->conn->prepare("UPDATE photo 
+                SET count_like = count_like - 1
+                WHERE id_photo = ?
+                and count_like > 0;");
+        $stmt->bind_param("i", $id_photo);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+    
+    /* is rating available */
+    public function isRatingAvailable($id_tv_series, $id_user) {
+        $stmt = $this->conn->prepare("SELECT id_rating FROM rating WHERE id_tv_series = ? AND id_user_regular = ?;");
+        $stmt->bind_param("ii", $id_tv_series, $id_user);
+        if ($stmt->execute()) {
+            $rating_id = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            return $rating_id;
+        } else {
+            return NULL;
+        }
+    }
+
+    /* add rating */
+    public function addRating($id_tv_series, $id_user, $value_rating) {
+        $stmt = $this->conn->prepare("INSERT INTO rating
+                    (`id_tv_series`, `id_user_regular`, `value_rating`)
+                    VALUES (?, ?, ?);");
+        $stmt->bind_param("iii", $id_tv_series, $id_user, $value_rating);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+    
+    /* update rating */
+    public function updateRating($id_rating, $rating_value) {
+        $stmt = $this->conn->prepare("UPDATE rating
+                    SET `value_rating` = ?
+                    WHERE `id_rating` = ?;");
+        $stmt->bind_param("ii",$rating_value, $id_rating);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
+    
+    /* change the values of rating of a tv_series */
+    public function changeRatingValueOfTvSeries($id_tv_series, $new_rating) {
+        $stmt = $this->conn->prepare("UPDATE tv_series 
+                SET count_rating = (count_rating * count_rating_giver) - 1,
+                count_rating_giver
+                WHERE id_photo = ?
+                and count_like > 0;");
+        $stmt->bind_param("i", $id_photo);
+        $result = $stmt->execute();
+        $stmt->close();
+        return $result;
+    }
 }
